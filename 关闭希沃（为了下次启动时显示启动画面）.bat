@@ -1,1 +1,0 @@
-taskkill /f /im EasiNote.exe /t

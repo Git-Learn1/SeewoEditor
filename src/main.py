@@ -11,8 +11,8 @@ import subprocess
 from win32com.client import Dispatch
 from pydub import AudioSegment
 from pydub.playback import play
-from data import pil_img, fix_pil_img, icon_path, sound
-from ui_seewoedit import SEMain
+from assets import pil_img, fix_pil_img, icon_path, sound
+from ui import SEMain
 from PySide6.QtWidgets import QMessageBox, QFileDialog, QApplication
 from PySide6.QtGui import QPixmap
 
