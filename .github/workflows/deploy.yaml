@@ -23,8 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pip-tools
-          pip-sync requirements.txt
+          pip install -r requirments.txt
 
       - name: Summon essential data
         run: |
@@ -40,7 +39,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref_name }}
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_name: swenIauncher.exe
-          asset_path: dist/swenIauncher.exe
-          asset_content_type: application/octet-stream
+          files: dist/swenIauncher.exe
