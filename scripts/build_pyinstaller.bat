@@ -1,1 +1,1 @@
-python -m PyInstaller -F -w ..\src\main -i ..\src\datas\builtin\a.ico
+python -m PyInstaller -F -w ..\src\main -i ..\src\data\builtin\a.ico

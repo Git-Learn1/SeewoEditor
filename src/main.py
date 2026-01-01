@@ -11,7 +11,7 @@ import subprocess
 from win32com.client import Dispatch
 from pydub import AudioSegment
 from pydub.playback import play
-from assets import pil_img, fix_pil_img, icon_path, sound
+from assets import get_bultin_assets, backup_default_resources
 from ui import SEMain
 from PySide6.QtWidgets import QMessageBox, QFileDialog, QApplication
 from PySide6.QtGui import QPixmap
@@ -64,6 +64,8 @@ class MainWindow(SEMain):
                 self.label_path.setText(path)
             elif os.path.exists(path2):
                 self.label_path.setText(path2)
+            if not os.path.exists(r"data\backup\original_seewo_image.png"):
+                backup_default_resources(self.seewo_path)
             self.label_seewo_path.setText(self.seewo_path)
             reg.Close()
         except FileNotFoundError:
@@ -84,6 +86,7 @@ class MainWindow(SEMain):
         self.desktop_path = winreg.QueryValueEx(winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"), "COMMON DESKTOP")[0]
         if not os.path.exists(os.path.join(self.desktop_path, INK)) and  not os.path.exists(os.path.join(self.desktop_path, "希沃白板.lnk")):
             self.desktop_path = self.desktop_path_cu
+        self.pil_img, self.fix_pil_img, self.icon_path, self.sound = get_bultin_assets()
         
     def choose_path(self):
         file_name, _ = QFileDialog.getOpenFileName(
@@ -118,10 +121,10 @@ class MainWindow(SEMain):
 
     def use_default_pic(self):
         self.file_name = os.path.join(os.getenv("TEMP"), "t.png") # type: ignore
-        pil_img.save(self.file_name)
+        self.pil_img.save(self.file_name)
         self.label_img.setPixmap(QPixmap(self.file_name))
         self.file_name_fix = os.path.join(os.getenv("TEMP"), "f.png") # type: ignore
-        fix_pil_img.save(self.file_name_fix)
+        self.fix_pil_img.save(self.file_name_fix)
 
     def replace_pic(self):
         QMessageBox.warning(
@@ -152,7 +155,7 @@ class MainWindow(SEMain):
             shortcut.Arguments = "--direct-run"
         else:
             shortcut.Arguments = "--direct-run" + f" --music {self.music_path}"
-        shortcut.IconLocation = icon_path
+        shortcut.IconLocation = self.icon_path
         shortcut.Save()
         QMessageBox.information(self, "提示", "替换成功！")
 
@@ -172,7 +175,7 @@ class MainWindow(SEMain):
         shell = Dispatch("WScript.Shell")
         shortcut = shell.CreateShortcut(os.path.join(self.desktop_path_cu, INK))
         shortcut.TargetPath = self.seewo_path
-        shortcut.IconLocation = icon_path
+        shortcut.IconLocation = self.icon_path
         shortcut.Save()
         QMessageBox.information(self, "提示", "修复成功！")
         
@@ -180,15 +183,9 @@ class MainWindow(SEMain):
         os.system("taskkill /f /im EasiNote.exe /t")
         subprocess.call(self.seewo_path)
         if not self.music_path:
-            p = pyaudio.PyAudio()
-            stream = p.open(format=p.get_format_from_width(2), channels=2, rate=44100, output=True)
-            stream.write(sound)
-            stream.stop_stream()
-            stream.close()
-            p.terminate()
-        else:
-            audio = AudioSegment.from_file(self.music_path, format=self.music_path.split(".")[-1])
-            play(audio)
+            self.music_path = self.sound
+        audio = AudioSegment.from_file(self.music_path, format=self.music_path.split(".")[-1])
+        play(audio)
 
 
 if __name__ == "__main__":

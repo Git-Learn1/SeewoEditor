@@ -5,3 +5,4 @@ pyinstaller
 nuitka
 pywin32
 pillow
+audioop-lts; python_version>='3.13'
