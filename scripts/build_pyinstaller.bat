@@ -1,1 +1,1 @@
-python -m PyInstaller -F -w ..\src\main -i ..\src\data\builtin\a.ico
+python -m PyInstaller -F -w ../src/main.py -i ../data/builtin/default_seewo_icon.ico --name swenIauncher.exe --uac-admin

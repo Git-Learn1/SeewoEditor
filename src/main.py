@@ -46,7 +46,7 @@ class MainWindow(SEMain):
         if not ctypes.windll.shell32.IsUserAnAdmin():
             QMessageBox.warning(self, "警告", "将请求管理员权限")
             ctypes.windll.shell32.ShellExecuteW(
-                None, "runas", sys.executable, __file__)
+                None, "runas", sys.executable, "")
             sys.exit(1)
 
     def find_seewo(self):

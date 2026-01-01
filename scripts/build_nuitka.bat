@@ -1,1 +1,0 @@
-python -m nuitka --onefile --msvc=14.3 ..\src\main.py --output-filename="swenIauncher.exe" --disable-console --enable-plugin=pyside6 --enable-plugin=upx --windows-icon-from-ico=..\src\data\builtin\a.ico
