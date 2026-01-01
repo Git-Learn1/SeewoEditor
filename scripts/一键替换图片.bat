@@ -1,1 +1,1 @@
-swenlauncher.exe --replace-pic
+swenIauncher.exe --replace-pic

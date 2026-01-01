@@ -48,16 +48,16 @@ class SEMain(QMainWindow):
         self.label_img.setScaledContents(True)
         layout.addWidget(self.label_img)
         
-        self.btn_replace = QPushButton("开始替换")
+        self.btn_replace = QPushButton("开始替换（仅图片）")
         layout.addWidget(self.btn_replace)
         
-        self.btn_lnk = QPushButton("替换快捷方式")
+        self.btn_lnk = QPushButton("替换快捷方式（以播放音乐）")
         layout.addWidget(self.btn_lnk)
 
         self.btn_fix = QPushButton("一键还原所有操作")
         layout.addWidget(self.btn_fix)
         
-        self.btn_start = QPushButton("希沃，启动！")
+        self.btn_start = QPushButton("希沃，启动！（带音乐）")
         layout.addWidget(self.btn_start)
         
         self.centralWidget().setLayout(layout)

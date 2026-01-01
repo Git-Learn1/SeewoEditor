@@ -1,1 +1,1 @@
-swenlauncher.exe --replace-shortcut
+swenIauncher.exe --replace-shortcut

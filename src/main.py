@@ -6,7 +6,6 @@ import winreg
 import shutil
 import os
 import stat
-import pyaudio
 import subprocess
 from win32com.client import Dispatch
 from pydub import AudioSegment
@@ -48,6 +47,7 @@ class MainWindow(SEMain):
             QMessageBox.warning(self, "警告", "将请求管理员权限")
             ctypes.windll.shell32.ShellExecuteW(
                 None, "runas", sys.executable, __file__)
+            sys.exit(1)
 
     def find_seewo(self):
         try:
@@ -65,7 +65,7 @@ class MainWindow(SEMain):
             elif os.path.exists(path2):
                 self.label_path.setText(path2)
             if not os.path.exists(r"data\backup\original_seewo_image.png"):
-                backup_default_resources(self.seewo_path)
+                backup_default_resources(self.label_path.text())
             self.label_seewo_path.setText(self.seewo_path)
             reg.Close()
         except FileNotFoundError:
@@ -120,11 +120,9 @@ class MainWindow(SEMain):
             self.label_music_path.setText(file_name)
 
     def use_default_pic(self):
-        self.file_name = os.path.join(os.getenv("TEMP"), "t.png") # type: ignore
-        self.pil_img.save(self.file_name)
+        self.file_name = r"data\builtin\default_seewo_image.png"
         self.label_img.setPixmap(QPixmap(self.file_name))
-        self.file_name_fix = os.path.join(os.getenv("TEMP"), "f.png") # type: ignore
-        self.fix_pil_img.save(self.file_name_fix)
+        self.file_name_fix = r"data\backup\original_seewo_image.png"
 
     def replace_pic(self):
         QMessageBox.warning(
@@ -132,9 +130,9 @@ class MainWindow(SEMain):
         self.get_admin()
         os.chmod(self.label_path.text(), stat.S_IWRITE)
         os.chmod(self.label_user_path.text(), stat.S_IWRITE)
-        shutil.copy(self.label_path.text(), self.label_path.text() + ".bak")
+        shutil.copy(self.label_path.text(), r"data\backup\replaced.png")
         shutil.copy(self.file_name, self.label_path.text())
-        shutil.copy(self.label_user_path.text(), self.label_user_path.text() + ".bak")
+        shutil.copy(self.label_user_path.text(), r"data\backup\replaced_user.png")
         shutil.copy(self.file_name, self.label_user_path.text())
         os.chmod(self.label_path.text(), stat.S_IREAD)
         os.chmod(self.label_user_path.text(), stat.S_IREAD)
@@ -184,6 +182,7 @@ class MainWindow(SEMain):
         subprocess.call(self.seewo_path)
         if not self.music_path:
             self.music_path = self.sound
+        print(self.music_path, self.music_path.split(".")[-1])
         audio = AudioSegment.from_file(self.music_path, format=self.music_path.split(".")[-1])
         play(audio)
 

@@ -11,6 +11,7 @@ def check_resources():
 def backup_default_resources(seewo_pic_path: str):
     if not os.path.exists(r"data\backup\original_seewo_image.png"):
         os.makedirs(r"data\backup", exist_ok=True)
+        print(seewo_pic_path)
         shutil.copy(seewo_pic_path, r"data\backup\original_seewo_image.png")
         
 def get_bultin_assets():
@@ -20,5 +21,5 @@ def get_bultin_assets():
     with open(r"data\backup\original_seewo_image.png", "rb") as f:
         fix_pil_img = Image.open(f)
     icon_path = r"data\builtin\icon.ico"
-    sound = AudioSegment.from_mp3(r"data\builtin\default_seewo_sound.mp3")
+    sound = r"data\builtin\default_seewo_sound.mp3"
     return pil_img, fix_pil_img, icon_path, sound
