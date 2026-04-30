@@ -1,7 +1,7 @@
 pydub
 PySide6
 pyinstaller
-#nuitka it's not supportted yet :(
+nuitka
 pywin32
 pillow
 simpleaudio

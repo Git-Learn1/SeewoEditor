@@ -1,0 +1,156 @@
+name: Build commit artifacts
+
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Windows artifacts
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run checks
+        run: |
+          python -m compileall src
+          python -m unittest discover -v
+
+      - name: Build PyInstaller onefile
+        shell: cmd
+        run: scripts\build_pyinstaller.bat
+
+      - name: Collect PyInstaller onefile
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts\pyinstaller-onefile | Out-Null
+          Copy-Item dist\swenIauncher.exe artifacts\pyinstaller-onefile\swenIauncher.exe
+
+      - name: Build PyInstaller onedir
+        shell: cmd
+        run: scripts\build_pyinstaller_dir.bat
+
+      - name: Collect PyInstaller onedir
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts\pyinstaller-onedir | Out-Null
+          Copy-Item dist\swenIauncher\* artifacts\pyinstaller-onedir -Recurse -Force
+
+      - name: Build Nuitka onefile
+        shell: cmd
+        run: scripts\build_nuitka.bat
+
+      - name: Collect Nuitka onefile
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts\nuitka-onefile | Out-Null
+          Copy-Item dist\nuitka-onefile\swenIauncher.exe artifacts\nuitka-onefile\swenIauncher.exe
+
+      - name: Build Nuitka standalone
+        shell: cmd
+        run: scripts\build_nuitka_dir.bat
+
+      - name: Collect Nuitka standalone
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts\nuitka-standalone | Out-Null
+          Copy-Item dist\nuitka-standalone\main.dist\* artifacts\nuitka-standalone -Recurse -Force
+
+      - name: Diagnose built launchers
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts\diagnostics | Out-Null
+          $env:__COMPAT_LAYER = "RunAsInvoker"
+          .\artifacts\pyinstaller-onefile\swenIauncher.exe --diagnose-runtime artifacts\diagnostics\pyinstaller-onefile.json
+          .\artifacts\pyinstaller-onedir\swenIauncher.exe --diagnose-runtime artifacts\diagnostics\pyinstaller-onedir.json
+          .\artifacts\nuitka-onefile\swenIauncher.exe --diagnose-runtime artifacts\diagnostics\nuitka-onefile.json
+          .\artifacts\nuitka-standalone\swenIauncher.exe --diagnose-runtime artifacts\diagnostics\nuitka-standalone.json
+
+      - name: Package release assets
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release-assets | Out-Null
+          Copy-Item artifacts\pyinstaller-onefile\swenIauncher.exe "release-assets\seewoeditor-pyinstaller-onefile.exe"
+          Copy-Item artifacts\nuitka-onefile\swenIauncher.exe "release-assets\seewoeditor-nuitka-onefile.exe"
+          Compress-Archive -Path artifacts\pyinstaller-onedir\* -DestinationPath "release-assets\seewoeditor-pyinstaller-onedir.zip" -Force
+          Compress-Archive -Path artifacts\nuitka-standalone\* -DestinationPath "release-assets\seewoeditor-nuitka-standalone.zip" -Force
+          Compress-Archive -Path artifacts\diagnostics\* -DestinationPath "release-assets\seewoeditor-diagnostics.zip" -Force
+
+      - name: Publish nightly build prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "nightly-build"
+          $title = "nightly build"
+          $notes = "Latest automated prerelease build for commit ${{ github.sha }}.`n`nThis nightly build pipeline is experimental. Use with caution."
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f $tag $env:GITHUB_SHA
+          git push --force origin "refs/tags/$tag"
+
+          gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --repo $env:GITHUB_REPOSITORY --title $title --notes $notes --prerelease --target $env:GITHUB_SHA
+          } else {
+            gh release edit $tag --repo $env:GITHUB_REPOSITORY --title $title --notes $notes --prerelease --target $env:GITHUB_SHA
+          }
+
+          gh release upload $tag release-assets\* --repo $env:GITHUB_REPOSITORY --clobber
+
+      - name: Upload PyInstaller onefile
+        uses: actions/upload-artifact@v4
+        with:
+          name: seewoeditor-${{ github.sha }}-pyinstaller-onefile
+          path: artifacts/pyinstaller-onefile/swenIauncher.exe
+          if-no-files-found: error
+
+      - name: Upload PyInstaller onedir
+        uses: actions/upload-artifact@v4
+        with:
+          name: seewoeditor-${{ github.sha }}-pyinstaller-onedir
+          path: artifacts/pyinstaller-onedir/**
+          if-no-files-found: error
+
+      - name: Upload Nuitka onefile
+        uses: actions/upload-artifact@v4
+        with:
+          name: seewoeditor-${{ github.sha }}-nuitka-onefile
+          path: artifacts/nuitka-onefile/swenIauncher.exe
+          if-no-files-found: error
+
+      - name: Upload Nuitka standalone
+        uses: actions/upload-artifact@v4
+        with:
+          name: seewoeditor-${{ github.sha }}-nuitka-standalone
+          path: artifacts/nuitka-standalone/**
+          if-no-files-found: error
+
+      - name: Upload diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: seewoeditor-${{ github.sha }}-diagnostics
+          path: artifacts/diagnostics/*.json
+          if-no-files-found: error
