@@ -27,6 +27,21 @@ jobs:
           python-version: "3.12"
           cache: pip
 
+      - name: Install UPX
+        shell: pwsh
+        run: |
+          if (-not (Get-Command upx -ErrorAction SilentlyContinue)) {
+            choco install upx -y --no-progress
+          }
+
+          $chocoBin = Join-Path $env:ProgramData "chocolatey\bin"
+          if (Test-Path $chocoBin) {
+            $env:PATH = "$chocoBin;$env:PATH"
+            $chocoBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
+
+          upx --version
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -102,6 +117,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          $latestSha = (git ls-remote origin "refs/heads/${{ github.ref_name }}").Split()[0]
+          if ($latestSha -ne "${{ github.sha }}") {
+            Write-Host "Skipping nightly build release because ${{ github.sha }} is no longer the latest commit on ${{ github.ref_name }}."
+            Write-Host "Latest remote head is $latestSha."
+            exit 0
+          }
+
           $tag = "nightly-build"
           $title = "nightly build"
           $notes = "Latest automated prerelease build for commit ${{ github.sha }}.`n`nThis nightly build pipeline is experimental. Use with caution."
